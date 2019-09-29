@@ -29,4 +29,4 @@ Check the example:
 
 # Credits
 
-Originally addon is forked from armadillu/ofxFFmpegUtils.
+Addon is forked from armadillu/ofxFFmpegUtils and modyfied for my needs (Denis Perevalov).
