@@ -27,6 +27,6 @@ Check the example:
 
 3. Run the example, and press "1" to create video from the sequence placed in 'data' folder.
 
-#Credits
+# Credits
 
-Originall addon is forked from armadillu/ofxFFmpegUtils.
+Originally addon is forked from armadillu/ofxFFmpegUtils.
