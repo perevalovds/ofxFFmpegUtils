@@ -1,0 +1,3 @@
+ofxExternalProcess
+ofxFFmpegUtils
+ofxPoco
