@@ -27,6 +27,15 @@ Check the example:
 
 3. Run the example, and press "1" to create video from the sequence placed in 'data' folder.
 
+# Using virtual drive in RAM
+
+When creating MP4 files, the image sequence is stored in disk.
+To fasten this, it's possible to creative virtual drive in RAM, using special software.
+For example, look at imdiskinst application. It's installer is in utils folder. 
+Install and create a virtual drive using Control Panel.
+See http://www.ltr-data.se/opencode.html/#ImDisk for details.
+
+
 # Credits
 
 Addon is forked from armadillu/ofxFFmpegUtils and modyfied for my needs (Denis Perevalov).
