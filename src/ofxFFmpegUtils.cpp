@@ -102,7 +102,8 @@ size_t ofxFFmpegUtils::imgSequenceToMP4(const string & imgFolder,
 									  float compressQuality,
 									  const string &filenameFormat, 		//ie frame_%08d
 									  const string & imgFileExtension, 	//ie tiff
-									  const string & outputMovieFilePath){
+									  const string & outputMovieFilePath,
+										bool executeBlocking){
 
 	size_t jobID = jobCounter;
 	jobCounter++;
@@ -129,21 +130,30 @@ size_t ofxFFmpegUtils::imgSequenceToMP4(const string & imgFolder,
 	}
 
 	proc->setup(
-				".", 				//working dir
-				ffmpegBinaryPath, 	//command
-				args 				//args (std::vector<string>)
-				);
+		".", 				//working dir
+		ffmpegBinaryPath, 	//command
+		args 				//args (std::vector<string>)
+	);
 
 	proc->setLivePipeOutputDelay(1);
 	proc->setLivePipe(ofxExternalProcess::STDOUT_AND_STDERR_PIPE);
 
-	JobInfo jobInfo;
-	jobInfo.type = IMG_SEQ_TO_MOVIE;
-	jobInfo.originalFile = imgFolder;
-	jobInfo.destinationFolder = outputMovieFilePath;
-	jobInfo.process = proc;
-	jobQueue[jobID] = jobInfo; //enqueue job
-	return jobID;
+	if (!executeBlocking) {
+
+		JobInfo jobInfo;
+		jobInfo.type = IMG_SEQ_TO_MOVIE;
+		jobInfo.originalFile = imgFolder;
+		jobInfo.destinationFolder = outputMovieFilePath;
+		jobInfo.process = proc;
+		jobQueue[jobID] = jobInfo; //enqueue job
+		return jobID;
+	}
+	else {
+		//executeBlocking
+		proc->executeBlocking();
+
+		return 0; //proc->getLastExecutionResult().statusCode;
+	}
 
 }
 

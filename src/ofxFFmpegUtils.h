@@ -55,7 +55,8 @@ public:
 							float compressQuality, /*0..1*/
 						  	const string &filenameFormat, 		//ie frame_%08d
 						  	const string & imgFileExtension, 	//ie tiff
-						  	const string & outputMovieFilePath 		//result movie file path
+						  	const string & outputMovieFilePath, 		//result movie file path
+							bool executeBlocking = false		//if executeBlocking - will be processed in the main thread (as the "system()" call)
 						  );
 
 	std::string getStatus();
