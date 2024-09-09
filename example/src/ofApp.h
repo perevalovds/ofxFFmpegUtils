@@ -23,5 +23,4 @@ public:
 
 	ofxFFmpegUtils ffmpeg;
 
-	void onFFmpegJobCompleted(ofxFFmpegUtils::JobResult & j);
 };

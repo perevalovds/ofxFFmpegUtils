@@ -4,6 +4,8 @@ An addon for creating MP4 videos from video sequences.
 
 Addon calls ffmpeg.exe and ffprobe.exe.
 
+perevalovds: removed many-threaded implementation and dependencies from ofxExternalProcess and ofxPoco.
+
 # Requirements
 
 * Windows 10 (will work on another OS, but reauires to change path to fmpeg binaries)
@@ -11,10 +13,6 @@ Addon calls ffmpeg.exe and ffprobe.exe.
 * oF 0.10.1, Visual Studio C++ 2017
 
 * 64 bit (will work 32 bit, but currently ffmpeg in example's 'bin' folder is 64 bit).
-
-# Dependencies
-
-* ofxExternalProcess addon (which also requires standard ofxPoco addon)
 
 
 # How to Use

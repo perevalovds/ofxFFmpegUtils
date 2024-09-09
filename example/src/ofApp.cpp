@@ -5,24 +5,11 @@ void ofApp::setup(){
 
 	ofBackground(22);
 	ffmpeg.setup("ffmpeg.exe", "ffprobe.exe");
-	ffmpeg.setMaxThreadsPerJob(1);
-	ffmpeg.setMaxSimulatneousJobs(10);
 	
-	ofAddListener(ffmpeg.eventJobCompleted, this, &ofApp::onFFmpegJobCompleted);
-}
-
-void ofApp::onFFmpegJobCompleted(ofxFFmpegUtils::JobResult & j){
-
-	ofLogNotice() << "FFmpeg Job " << j.jobID << " Complete: " << j.ok;
-	ofLogNotice() << "exec time: " << j.results.runTime << " sec";
-	ofLogNotice() << "output: " << j.results.combinedOutput;
-
 }
 
 void ofApp::update(){
 
-	float dt = 1./60.;
-	ffmpeg.update(dt);
 }
 
 
@@ -31,7 +18,6 @@ void ofApp::draw(){
 	ofDrawBitmapString("drag movie files into this window to create image sequences ", 20, 20);
 	ofDrawBitmapString("press 1 to create mp4", 20, 40);
 
-	ffmpeg.drawDebug(20, 60);
 }
 
 

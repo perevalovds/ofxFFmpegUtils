@@ -12,17 +12,7 @@ ofxFFmpegUtils::ofxFFmpegUtils(){
 }
 
 ofxFFmpegUtils::~ofxFFmpegUtils(){
-	for(auto p : jobQueue){
-		delete p.second.process;
-	}
-	jobQueue.clear();
-
-	for(auto p : activeProcesses){
-		p.second.process->kill();
-		p.second.process->join();
-		delete p.second.process;
-	}
-	activeProcesses.clear();
+	
 }
 
 void ofxFFmpegUtils::setup(const string & ffmpegBinaryPath, const string & ffProbeBinaryPath){
@@ -32,15 +22,6 @@ void ofxFFmpegUtils::setup(const string & ffmpegBinaryPath, const string & ffPro
 
 bool ofxFFmpegUtils::isFFMpegAvailable(){
 	return ofFile::doesFileExist(ffmpegBinaryPath) && ofFile::doesFileExist(ffProbeBinaryPath);
-}
-
-
-void ofxFFmpegUtils::setMaxSimulatneousJobs(int max){
-	maxSimultJobs = ofClamp(max, 1, INT_MAX);
-}
-
-void ofxFFmpegUtils::setMaxThreadsPerJob(int maxThr){
-	maxThreadsPerJob = maxThr;
 }
 
 ofJson ofxFFmpegUtils::getVideoInfo(const string & filePath){
@@ -97,18 +78,13 @@ float ofxFFmpegUtils::getVideoFramerate(const string & movieFilePath){
 	}
 }
 
-size_t ofxFFmpegUtils::imgSequenceToMP4(const string & imgFolder,
+void ofxFFmpegUtils::imgSequenceToMP4(const string & imgFolder,
 									  float framerate,
 									  float compressQuality,
 									  const string &filenameFormat, 		//ie frame_%08d
 									  const string & imgFileExtension, 	//ie tiff
-									  const string & outputMovieFilePath,
-										bool executeBlocking){
+									  const string & outputMovieFilePath){
 
-	size_t jobID = jobCounter;
-	jobCounter++;
-
-	ofxExternalProcess * proc = new ofxExternalProcess();
 	vector<string> args;
 
 	args = {
@@ -129,43 +105,16 @@ size_t ofxFFmpegUtils::imgSequenceToMP4(const string & imgFolder,
 		args.insert(args.begin(), extraArguments.begin(), extraArguments.end());
 	}
 
-	proc->setup(
-		".", 				//working dir
-		ffmpegBinaryPath, 	//command
-		args 				//args (std::vector<string>)
-	);
-
-	proc->setLivePipeOutputDelay(1);
-	proc->setLivePipe(ofxExternalProcess::STDOUT_AND_STDERR_PIPE);
-
-	if (!executeBlocking) {
-
-		JobInfo jobInfo;
-		jobInfo.type = IMG_SEQ_TO_MOVIE;
-		jobInfo.originalFile = imgFolder;
-		jobInfo.destinationFolder = outputMovieFilePath;
-		jobInfo.process = proc;
-		jobQueue[jobID] = jobInfo; //enqueue job
-		return jobID;
-	}
-	else {
-		//executeBlocking
-		proc->executeBlocking();
-
-		return 0; //proc->getLastExecutionResult().statusCode;
-	}
-
+	cout << "Starting ffmpeg" << endl;
+	string res = ofSystem(ffmpegBinaryPath + " " + ofJoinString(args, " "));
+	cout << "ffmpeg finished " << res << endl;
 }
 
 
-size_t ofxFFmpegUtils::convertToImageSequence(const string & movieFile, const string & imgFileExtension, float jpegQuality/*[0..1]*/,
+void ofxFFmpegUtils::convertToImageSequence(const string & movieFile, const string & imgFileExtension, float jpegQuality/*[0..1]*/,
 											  const string & outputFolder, bool convertToGrayscale, int numFilenameDigits,
 											ofVec2f resizeBox, ofVec2f cropToAspectRatio, float cropBalance){
-
-	size_t jobID = jobCounter;
-	jobCounter++;
-
-	ofxExternalProcess * proc = new ofxExternalProcess();
+	
 	vector<string> args;
 
 	//beware - this overwrites
@@ -286,11 +235,11 @@ size_t ofxFFmpegUtils::convertToImageSequence(const string & movieFile, const st
 	}
 
 
-	if(maxThreadsPerJob > 0){
-		ofLogNotice("ofxFFmpegUtils") << "limiting ffmpeg job to " << maxThreadsPerJob << " threads.";
-		args.insert(args.begin(), ofToString(maxThreadsPerJob));
-		args.insert(args.begin(), "-threads");
-	}
+	//if(maxThreadsPerJob > 0){
+	//	ofLogNotice("ofxFFmpegUtils") << "limiting ffmpeg job to " << maxThreadsPerJob << " threads.";
+	//	args.insert(args.begin(), ofToString(maxThreadsPerJob));
+	//	args.insert(args.begin(), "-threads");
+	//}
 
 	if(convertToGrayscale){
 		needVF = true;
@@ -312,108 +261,8 @@ size_t ofxFFmpegUtils::convertToImageSequence(const string & movieFile, const st
 		args.insert(args.begin() + args.size() - 1, totalVF);
 	}
 
-	proc->setup(
-				".", 				//working dir
-				ffmpegBinaryPath, 	//command
-				args 				//args (std::vector<string>)
-	);
-
-	proc->setLivePipeOutputDelay(0);
-	proc->setLivePipe(ofxExternalProcess::STDOUT_AND_STDERR_PIPE);
-
-	//proc->executeInThreadAndNotify();
-	JobInfo jobInfo;
-	jobInfo.type = MOVIE_TO_IMG_SEQ;
-	jobInfo.originalFile = movieFile;
-	jobInfo.destinationFolder = outputFolder;
-	jobInfo.process = proc;
-	jobQueue[jobID] = jobInfo; //enqueue job
-	return jobID;
+	cout << "Starting ffmpeg" << endl;
+	string result = ofSystem(ffmpegBinaryPath + " " + ofJoinString(args, " "));
+	cout << "ffmpeg finished " << res << endl;
 }
 
-
-void ofxFFmpegUtils::update(float dt){
-
-	vector<size_t> toDelete;
-
-	//look for finished processes, put them on delete list and notify
-	for(auto p : activeProcesses){
-		if (!p.second.process->isRunning()){
-			ofLogNotice("ofxFFmpegUtils") << "job \"" << p.first << "\" done!";
-			//ofLogNotice("ofxFFmpegUtils") << p.second->getCombinedOutput();
-			JobResult r;
-			r.type = p.second.type;
-			r.jobID = p.first;
-			r.inputFilePath = p.second.originalFile;
-			r.outputFolder = p.second.destinationFolder;
-			r.results = p.second.process->getLastExecutionResult();
-			r.ok = r.results.statusCode == 0;
-			ofNotifyEvent(eventJobCompleted, r, this);
-
-			delete p.second.process;
-			toDelete.push_back(p.first);
-		}
-	}
-
-	//delete completed processes
-	for(auto p : toDelete){
-		activeProcesses.erase(p);
-	}
-
-	//spawn pending jobs if any, but only up to "maxSimultJobs" can run at the same time
-	vector<size_t> toTransfer;
-	for(auto & p : jobQueue){
-		if(activeProcesses.size() + toTransfer.size() < maxSimultJobs){
-			toTransfer.push_back(p.first);
-		}else{
-			break;
-		}
-	}
-
-	for(auto & t : toTransfer){
-		activeProcesses[t] = jobQueue[t];
-		activeProcesses[t].process->setLivePipeOutputDelay(0);
-		activeProcesses[t].process->executeInThreadAndNotify();
-		jobQueue.erase(t);
-	}
-}
-
-string ofxFFmpegUtils::getCurrentOutputForJob(size_t jobID){
-
-	auto it = activeProcesses.find(jobID);
-	if(it != activeProcesses.end()){
-		if(it->second.process){
-			return it->second.process->getSmartOutput();
-		}else{
-			ofLogError("ofxFFmpegUtils") << "can't getCurrentOutputForJob() as process is NULL? (jobID: " << jobID << ")";
-		}
-	}
-	ofLogError("ofxFFmpegUtils") << "can't getCurrentOutputForJob() as jobID " << jobID << " does not exist!";
-	return "";
-}
-
-
-std::string ofxFFmpegUtils::getStatus(){
-
-	string msg = "#### ofxFFmpegUtils ################################\n";
-	msg += " Pending: " + ofToString(jobQueue.size()) + " Active: " + ofToString(activeProcesses.size()) + "\n";
-
-	for(auto & p : activeProcesses){
-		auto out = p.second.process->getCombinedOutput();
-		auto lines = ofSplitString(out, "\n");
-		if(lines.size() > 0){
-			auto frames = ofSplitString(lines.back(), "\r");
-			if(frames.size() > 0){
-				msg += "   -P" + ofToString(p.first) + ": " + frames.back() + "\n";
-			}
-		}
-	}
-	return msg;
-}
-
-void ofxFFmpegUtils::drawDebug(int x, int y){
-	ofPushMatrix();
-	ofTranslate(x,y);
-		ofDrawBitmapString(getStatus(), 0, 0);
-	ofPopMatrix();
-}
