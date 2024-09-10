@@ -16,7 +16,8 @@ public:
 	ofxFFmpegUtils();
 	~ofxFFmpegUtils();
 
-	void setup(const string & ffmpegBinaryPath, const string & ffProbeBinaryPath);
+	void setup(const string& ffmpegBinaryPath = "ffmpeg.exe", 
+		const string& ffProbeBinaryPath = "ffprobe.exe");
 
 	bool isFFMpegAvailable();
 
