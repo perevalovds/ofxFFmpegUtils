@@ -4,7 +4,7 @@
 void ofApp::setup(){
 
 	ofBackground(22);
-	ffmpeg.setup("ffmpeg.exe", "ffprobe.exe");
+	ffmpeg.setup();
 	
 }
 
