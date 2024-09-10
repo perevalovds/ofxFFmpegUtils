@@ -87,17 +87,19 @@ void ofxFFmpegUtils::imgSequenceToMP4(const string & imgFolder,
 
 	vector<string> args;
 
+	// yuv444p not supported in all apps, but keeps colors better
 	args = {
 		"-framerate", ofToString(framerate, 4),
 		"-y", //overwrite
-		"-i" , imgFolder + "/" + filenameFormat + "." + imgFileExtension,
-		"-profile:v", "baseline", "-level", "3.0",
+		"-i" , "\"" + imgFolder + "/" + filenameFormat + "." + imgFileExtension + "\"",
+		"-profile:v", "high444", // "baseline", 
+		"-level", "5.1", //"3.0",
 		"-x264opts", "keyint=30",
-		"-vf", "format=yuv420p",
+		"-vf", "format=yuv444p,eq=gamma=1.0", //"format=yuv420p",
 		"-crf", ofToString((int)ofMap(compressQuality, 0, 1, 51, 0, true), 0),
 		"-loglevel", "30", //verbose
 		"-nostdin",
-		"-nostats", //this removes the \r stuff with progresss
+		//"-nostats", //this removes the \r stuff with progresss
 		outputMovieFilePath
 	};
 
@@ -105,8 +107,11 @@ void ofxFFmpegUtils::imgSequenceToMP4(const string & imgFolder,
 		args.insert(args.begin(), extraArguments.begin(), extraArguments.end());
 	}
 
-	cout << "Starting ffmpeg" << endl;
-	string res = ofSystem(ffmpegBinaryPath + " " + ofJoinString(args, " "));
+	string command = ffmpegBinaryPath + " " + ofJoinString(args, " ");
+
+	cout << "Starting ffmpeg with command:" << endl;
+	cout << command << endl;
+	string res = ofSystem(command);
 	cout << "ffmpeg finished " << res << endl;
 }
 
